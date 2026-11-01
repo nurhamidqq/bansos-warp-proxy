@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 # Install bansos-warp-proxy on a VPS (Debian/Ubuntu).
 # Run as root, from the cloned repo directory.
-# Usage: sudo ./scripts/install-vps.sh
+# Usage (do NOT source it with ". " — run it as a command):
+#   sudo bash ./scripts/install-vps.sh
+#   # or, after chmod +x:
+#   sudo ./scripts/install-vps.sh
 # It does NOT set your allowed_source_ips or token: edit
 # /opt/bansos-warp-proxy/config.json and /etc/bansos-warp-proxy.env
 # after install, then restart the service.
@@ -12,15 +15,49 @@ if [ "$(id -u)" -ne 0 ]; then
   exit 1
 fi
 
-REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+# Resolve the repo root from the script's own location, not from $0.
+# $0 is the shell itself when this file is sourced (". ./scripts/..."),
+# which is why the old version cd'd to the wrong directory and then
+# failed with "go.mod file not found". BASH_SOURCE[0] is the script
+# path even when sourced, so this works in both cases.
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}"
+SCRIPT_DIR="$(cd "$(dirname "$SCRIPT_PATH")" && pwd)"
+REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Fallback: if the resolved dir has no go.mod but the current
+# directory does, the user is already in the repo root — use that.
+if [ ! -f "$REPO_DIR/go.mod" ] && [ -f "$PWD/go.mod" ]; then
+  REPO_DIR="$PWD"
+fi
+if [ ! -f "$REPO_DIR/go.mod" ]; then
+  echo "ERROR: go.mod not found in $REPO_DIR" >&2
+  echo "Run this script from the repo root, e.g.:" >&2
+  echo "  cd /home/ubuntu/bansos-warp-proxy && sudo bash ./scripts/install-vps.sh" >&2
+  exit 1
+fi
 INSTALL_DIR=/opt/bansos-warp-proxy
 
-echo "== install Go (if missing) =="
-if ! command -v go >/dev/null 2>&1; then
+echo "== install Go (if missing or older than 1.24) =="
+GO_OK=0
+if command -v go >/dev/null 2>&1; then
+  # go version prints e.g. "go version go1.24.0 linux/amd64"
+  GO_VER="$(go version 2>/dev/null | awk '{print $3}' | sed 's/^go//')"
+  GO_MAJOR="$(echo "$GO_VER" | cut -d. -f1)"
+  GO_MINOR="$(echo "$GO_VER" | cut -d. -f2)"
+  if [ "$GO_MAJOR" -gt 1 ] || { [ "$GO_MAJOR" -eq 1 ] && [ "$GO_MINOR" -ge 24 ]; }; then
+    GO_OK=1
+  fi
+fi
+if [ "$GO_OK" -eq 0 ]; then
+  ARCH="$(uname -m)"
+  case "$ARCH" in
+    x86_64|amd64) GO_ARCH=amd64 ;;
+    aarch64|arm64) GO_ARCH=arm64 ;;
+    *) echo "ERROR: unsupported architecture $ARCH" >&2; exit 1 ;;
+  esac
   apt-get update
   apt-get install -y wget ca-certificates
-  # Go 1.24, linux/amd64. Adjust GO_TARBALL for arm64 if needed.
-  GO_TARBALL=go1.24.0.linux-amd64.tar.gz
+  GO_TARBALL="go1.24.0.linux-${GO_ARCH}.tar.gz"
   wget -q "https://go.dev/dl/${GO_TARBALL}" -O "/tmp/${GO_TARBALL}"
   rm -rf /usr/local/go
   tar -C /usr/local -xzf "/tmp/${GO_TARBALL}"
@@ -30,7 +67,7 @@ fi
 export PATH="/usr/local/go/bin:$PATH"
 go version
 
-echo "== build =="
+echo "== build (in $REPO_DIR) =="
 cd "$REPO_DIR"
 go mod tidy
 go mod download
