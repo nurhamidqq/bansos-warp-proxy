@@ -1,0 +1,21 @@
+bansos-warp-proxy — GPL-3.0-or-later
+
+Copyright (C) 2026 nurhamidqq
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details.
+
+Full text: https://www.gnu.org/licenses/gpl-3.0.txt
+
+Attribution: the internal/warp design follows opencode2api's
+internal/warp (GPL-3.0-or-later), which itself notes it is adapted
+from github.com/sudogeeker/ai-route (MIT). The relay protocol
+implemented here is bansos-router's (GPL-3.0-only), as documented
+in its src/relay/egress.ts.

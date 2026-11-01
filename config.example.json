@@ -1,0 +1,17 @@
+{
+  "allowed_source_ips": [
+    "GANTI_DENGAN_IP_PUBLIK_LAPTOP_KAMU"
+  ],
+  "allowed_targets": [
+    "https://opencode.ai",
+    "https://api.kilo.ai",
+    "https://api.llm7.io"
+  ],
+  "listen": "0.0.0.0:18080",
+  "max_conns": 50,
+  "upstream_timeout_seconds": 120,
+  "warp_enabled": true,
+  "warp_pool_size": 2,
+  "warp_source_ipv6": "",
+  "warp_stack": "ipv6"
+}

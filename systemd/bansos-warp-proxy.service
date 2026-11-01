@@ -1,0 +1,24 @@
+[Unit]
+Description=bansos-warp-proxy (WARP egress relay for bansos-router)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=bansoswarp
+Group=bansoswarp
+WorkingDirectory=/opt/bansos-warp-proxy
+ExecStart=/opt/bansos-warp-proxy/bansos-warp-proxy -config /opt/bansos-warp-proxy/config.json
+EnvironmentFile=-/etc/bansos-warp-proxy.env
+Restart=on-failure
+RestartSec=5
+# No TUN/root needed: userspace WireGuard + gVisor netstack.
+# Still harden: no new privileges, private tmp, protect system files.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/bansos-warp-proxy
+
+[Install]
+WantedBy=multi-user.target

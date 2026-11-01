@@ -1,0 +1,4 @@
+/bansos-warp-proxy
+config.json
+*.log
+.env
